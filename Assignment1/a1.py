@@ -8,6 +8,8 @@ from sklearn.svm import SVC
 from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 from sklearn.metrics import classification_report
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import Perceptron, PassiveAggressiveClassifier
+from sklearn.neural_network import MLPClassifier
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
@@ -47,8 +49,15 @@ def train(tfidf, y, model_name, overwrite=False):
         model = MultinomialNB()
     elif model_name == "knn":
         model = KNeighborsClassifier()
+    elif model_name == "preceptron":
+        model = Perceptron(penalty="l2", verbose=1)
+    elif model_name == "mlp":
+        model = MLPClassifier(hidden_layer_sizes=[5 for i in range(10)], verbose=True)
+    elif model_name == "pac":
+        model = PassiveAggressiveClassifier(n_jobs=4, verbose=1)
 
     model.fit(tfidf, y)
+    print("Dumping Model")
     pickle.dump(model, open(model_name, "wb"))
     return model
 
@@ -101,7 +110,7 @@ else:
     y_train = pickle.load(open("y_tri_cat", "rb"))
     vectorizer = pickle.load(open("model.model", "rb"))
 
-    model = train(tfidf_train, y_train, "knn")
+    model = train(tfidf_train, y_train, "pac")
 
     print("\nReading dev Data\n")
     data = []
