@@ -5,7 +5,9 @@ import sys
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
 from sklearn.svm import SVC
+from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 from sklearn.metrics import classification_report
+from sklearn.neighbors import KNeighborsClassifier
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
@@ -17,15 +19,38 @@ tokenizer = RegexpTokenizer(r'(?u)\b\w\w+\b')
 en_stop = set(stopwords.words('english'))
 
 
+def calculate_acc(y1, y2):
+    count = 0
+    for a, b in zip(y1, y2):
+        if a == b:
+            count += 1
+
+    return "Accuracy: %0.2f" % (count * 100 / len(y1))
+
+
 def my_analyzer(doc):
     return [lemmatizer.lemmatize(token) for token in analyzer(doc)]
 
 
-def linearsvc(tfidf, y):
-    svc = LinearSVC(multi_class="ovr", verbose=1)
-    print("Training svc")
-    svc.fit(tfidf, y)
-    return svc
+def train(tfidf, y, model_name, overwrite=False):
+    if os.path.exists(model_name) and not overwrite:
+        print("Model Already Exists. Loading %s" % model_name)
+        model = pickle.load(open(model_name, "rb"))
+        return model
+
+    print("Training %s" % model_name)
+    if model_name == "linearsvc":
+        model = LinearSVC(multi_class="ovr", verbose=1)
+    elif model_name == "bNB":
+        model = BernoulliNB()
+    elif model_name == "mNB":
+        model = MultinomialNB()
+    elif model_name == "knn":
+        model = KNeighborsClassifier()
+
+    model.fit(tfidf, y)
+    pickle.dump(model, open(model_name, "wb"))
+    return model
 
 
 lemma = True if len(sys.argv) == 2 and sys.argv[1] == "lemma" else False
@@ -75,8 +100,8 @@ else:
     tfidf_train = pickle.load(open(tfidf_file, "rb"))
     y_train = pickle.load(open("y_tri_cat", "rb"))
     vectorizer = pickle.load(open("model.model", "rb"))
-    model = linearsvc(tfidf_train, y_train)
-    # model = runSVC(tfidf_train, y_train, "rbf", 1.0, 0.001)
+
+    model = train(tfidf_train, y_train, "knn")
 
     print("\nReading dev Data\n")
     data = []
@@ -90,10 +115,11 @@ else:
 
     del data
 
-    print("Cacluating tfidf")
+    print("Cacluating tfidf for dev data")
     tfidf_test = vectorizer.transform(corpus)
     del corpus
 
+    print("Predicting dev data")
     y_pred = model.predict(tfidf_test)
     y_train_pred = model.predict(tfidf_train)
     del tfidf_test
@@ -104,5 +130,10 @@ else:
         for ys in y_pred:
             f.write("%d\n" % (ys))
 
+    print("Report on Training Data")
+    print(calculate_acc(y_train, y_train_pred))
     print(classification_report(y_train, y_train_pred))
+
+    print("Report on Test Data")
+    print(calculate_acc(y_test, y_pred))
     print(classification_report(y_test, y_pred))
