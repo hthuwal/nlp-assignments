@@ -10,10 +10,12 @@ from tqdm import tqdm
 lemmatizer = WordNetLemmatizer()
 analyzer = TfidfVectorizer().build_analyzer()
 
+
 def my_analyzer(doc):
     return [lemmatizer.lemmatize(token) for token in analyzer(doc)]
 
-tfidf_file="tfidf_lemmetized.termdoc"
+
+tfidf_file = "tfidf_lemmetized.termdoc"
 # tfidf_file="tfidf_unlemmetized.termdoc"
 
 tfidf = None
