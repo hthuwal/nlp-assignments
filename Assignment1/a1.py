@@ -8,7 +8,7 @@ from sklearn.svm import SVC
 from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 from sklearn.metrics import classification_report
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import Perceptron, PassiveAggressiveClassifier
+from sklearn.linear_model import Perceptron, PassiveAggressiveClassifier, LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer
@@ -41,8 +41,10 @@ def train(tfidf, y, model_name, overwrite=False):
         return model
 
     print("Training %s" % model_name)
-    if model_name == "linearsvc":
+    if model_name == "linearsvcl2":
         model = LinearSVC(multi_class="ovr", verbose=1)
+    if model_name == "linearsvcl1":
+        model = LinearSVC(multi_class="ovr", verbose=1, penalty="l1", dual=False)
     elif model_name == "bNB":
         model = BernoulliNB()
     elif model_name == "mNB":
@@ -55,6 +57,10 @@ def train(tfidf, y, model_name, overwrite=False):
         model = MLPClassifier(hidden_layer_sizes=[5 for i in range(10)], verbose=True)
     elif model_name == "pac":
         model = PassiveAggressiveClassifier(n_jobs=4, verbose=1)
+    elif model_name == "logrl1":
+        model = LogisticRegression(n_jobs=4, penalty='l1', verbose=1, solver="saga")
+    elif model_name == "logrl2":
+        model = LogisticRegression(n_jobs=4, penalty='l2', verbose=1, solver="saga")
 
     model.fit(tfidf, y)
     print("Dumping Model")
@@ -110,7 +116,7 @@ else:
     y_train = pickle.load(open("y_tri_cat", "rb"))
     vectorizer = pickle.load(open("model.model", "rb"))
 
-    model = train(tfidf_train, y_train, "pac")
+    model = train(tfidf_train, y_train, "linearsvcl2")
 
     print("\nReading dev Data\n")
     data = []
