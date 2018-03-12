@@ -33,10 +33,9 @@ def calculate_acc(y1, y2):
 
     return "Accuracy: %0.2f" % (count * 100 / len(y1))
 
-
-def my_analyzer(doc):
-    return [lemmatizer.lemmatize(token) for token in analyzer(doc)]
-
+def pos(pair):
+    f_id, doc = pair
+    return f_id, nltk.pos_tag(nltk.word_tokenize(doc))
 
 def train(tfidf, y, model_name, overwrite=False):
     if os.path.exists(model_name) and not overwrite:
@@ -77,7 +76,7 @@ lemma = True if len(sys.argv) == 2 and sys.argv[1] == "lemma" else False
 if lemma:
     tfidf_file = "tfidf_lemmetized.termdoc"
 else:
-    tfidf_file = "tfidf_unlemmetized.termdoc"
+    tfidf_file = "tfidf_unlemmetized_last_try.termdoc"
 
 tfidf = None
 y = None
@@ -97,12 +96,18 @@ if not os.path.exists(tfidf_file):
         vectorizer = TfidfVectorizer(max_features=15000, analyzer=my_analyzer, input='content', binary=True, norm='l2', stop_words='english')
     else:
         vectorizer = TfidfVectorizer(max_features=15000, input='content', binary=True, norm='l2', stop_words='english')
+    
+    del data
+    
+    print("pos")
+    tokens = None
+    with mp.Pool() as pool:
+        tokens = pool.map(pos, corpus)
 
     
     print("\nCalculating TFIDF scores\n")
-    tfidf = vectorizer.fit_transform(corpus)
+    tfidf = vectorizer.fit_transform(tokens)
 
-    del data
 
     print("Dumping tfidf")
     with open(tfidf_file, "wb") as f:
@@ -120,6 +125,7 @@ else:
     tfidf_train = pickle.load(open(tfidf_file, "rb"))
     y_train = pickle.load(open("y_tri_cat", "rb"))
     vectorizer = pickle.load(open("model.model", "rb"))
+    # tfidf_train, y_train = None, None
 
     model = train(tfidf_train, y_train, "linearsvcl2")
 
