@@ -10,10 +10,14 @@ from sklearn.metrics import classification_report
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import Perceptron, PassiveAggressiveClassifier, LogisticRegression
 from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import f1_score
+from gensim.sklearn_api.ldamodel import LdaTransformer
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
+import nltk
 from tqdm import tqdm
+import multiprocessing as mp
 
 lemmatizer = WordNetLemmatizer()
 analyzer = TfidfVectorizer().build_analyzer()
@@ -86,14 +90,15 @@ if not os.path.exists(tfidf_file):
             data.append(json.loads(line))
 
     print("\nExtracting x's and y's\n")
-    corpus = [each["reviewText"] for each in data]
-    y = [-1 if each["overall"] == 1 or each["overall"] == 2 else 1 if each["overall"] == 4 or each["overall"] == 5 else 0 for each in data]
+    corpus = [(each["summary"]+" ")*4 + each["reviewText"] for each in data]
+    y = [each["overall"] for each in data]
 
     if lemma:
         vectorizer = TfidfVectorizer(max_features=15000, analyzer=my_analyzer, input='content', binary=True, norm='l2', stop_words='english')
     else:
         vectorizer = TfidfVectorizer(max_features=15000, input='content', binary=True, norm='l2', stop_words='english')
 
+    
     print("\nCalculating TFIDF scores\n")
     tfidf = vectorizer.fit_transform(corpus)
 
@@ -126,7 +131,7 @@ else:
 
     print("\nExtracting x's and y's\n")
     corpus = [each["reviewText"] for each in data]
-    y_test = [-1 if each["overall"] == 1 or each["overall"] == 2 else 1 if each["overall"] == 4 or each["overall"] == 5 else 0 for each in data]
+    y_test = [each["overall"] for each in data]
 
     del data
 
@@ -145,10 +150,17 @@ else:
         for ys in y_pred:
             f.write("%d\n" % (ys))
 
+    y_train = [-1 if i == 1 or i == 2 else 1 if i == 4 or i == 5 else 0 for i in y_train]
+    y_test = [-1 if i == 1 or i == 2 else 1 if i == 4 or i == 5 else 0 for i in y_test]
+    y_pred = [-1 if i == 1 or i == 2 else 1 if i == 4 or i == 5 else 0 for i in y_pred]
+    y_train_pred = [-1 if i == 1 or i == 2 else 1 if i == 4 or i == 5 else 0 for i in y_train_pred]
+
+
     print("Report on Training Data")
     print(calculate_acc(y_train, y_train_pred))
     print(classification_report(y_train, y_train_pred))
 
     print("Report on Test Data")
     print(calculate_acc(y_test, y_pred))
+    print(f1_score(y_test, y_pred, average="macro"))
     print(classification_report(y_test, y_pred))
