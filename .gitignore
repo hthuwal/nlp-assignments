@@ -4,17 +4,6 @@
 /nlp.sublime-workspace
 
 /Assignment1/dataset
-/Assignment1/2017MCS2074.model
-
-/Assignment1/linearsvcl2
-
-/Assignment1/model.model
-
-/Assignment1/only_reviews/
-
-/Assignment1/tfidf_unlemmetized_with_overview.termdoc
-
-/Assignment1/y_tri_cat
 
 /bin/
 
@@ -25,3 +14,8 @@
 /man/
 
 /pip-selfcheck.json
+
+/Assignment1.1/2017MCS2074.model
+/Assignment1.1/dataset/
+
+/Assignment1.1/models/
