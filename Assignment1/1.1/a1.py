@@ -84,7 +84,7 @@ y = None
 if not os.path.exists(tfidf_file):
     print("\nReading Data\n")
     data = []
-    with open("dataset/audio_train.json", "r") as f:
+    with open("../dataset/audio_train.json", "r") as f:
         for line in tqdm(f):
             data.append(json.loads(line))
 
@@ -131,7 +131,7 @@ else:
 
     print("\nReading dev Data\n")
     data = []
-    with open("dataset/audio_dev.json", "r") as f:
+    with open("../dataset/audio_dev.json", "r") as f:
         for line in tqdm(f):
             data.append(json.loads(line))
 
