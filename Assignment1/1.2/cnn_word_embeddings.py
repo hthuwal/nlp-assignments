@@ -69,6 +69,7 @@ class CNN(nn.Module):
         output = self.out(x)
         return output
 
+
 print("Lodaing Vocab")
 word2idx = pickle.load(open("word2idx", "rb"))
 
@@ -79,15 +80,15 @@ with open("../dataset/audio_train.json", "r") as f:
         data.append(json.loads(line))
 
 print("\nExtracting x's and y's\n")
-corpus = [(each["summary"]+" ")*4 + each["reviewText"] for each in data]
-y_train = np.array([int(each["overall"]-1) for each in data])
+corpus = [(each["summary"] + " ") * 4 + each["reviewText"] for each in data]
+y_train = np.array([int(each["overall"] - 1) for each in data])
 
 del data
 print("\nRemoving stopwords\n")
 x_train = []
 for each in tqdm(corpus):
     temp = each.lower().split()
-    x_train.append([ word2idx[i] for i in temp if i not in en_stop ])
+    x_train.append([word2idx[i] for i in temp if i not in en_stop])
 del corpus
 
 print("\nCoverting to sets\n")
@@ -104,7 +105,6 @@ x_train = torch.from_numpy(np.array(x_train))
 y_train = torch.from_numpy(y_train)
 
 
-
 print("\nReading Dev Data\n")
 data = []
 with open("../dataset/audio_dev.json", "r") as f:
@@ -112,15 +112,15 @@ with open("../dataset/audio_dev.json", "r") as f:
         data.append(json.loads(line))
 
 print("\nExtracting x's and y's\n")
-corpus = [(each["summary"]+" ")*4 + each["reviewText"] for each in data]
-y_dev = np.array([int(each["overall"]-1) for each in data])
+corpus = [(each["summary"] + " ") * 4 + each["reviewText"] for each in data]
+y_dev = np.array([int(each["overall"] - 1) for each in data])
 
 del data
 print("\nRemoving stopwords\n")
 x_dev = []
 for each in tqdm(corpus):
     temp = each.lower().split()
-    x_dev.append([ word2idx[i] for i in temp if i not in en_stop ])
+    x_dev.append([word2idx[i] for i in temp if i not in en_stop])
 del corpus
 
 for i in tqdm(range(len(x_dev))):
@@ -134,7 +134,6 @@ data = random.sample(list(zip(x_dev, y_dev)), 1000)
 x_dev, y_dev = zip(*data)
 x_dev = torch.from_numpy(np.array(x_dev))
 y_dev = torch.from_numpy(np.array(y_dev))
-
 
 
 if os.path.exists("models/cnn_we"):
@@ -179,7 +178,7 @@ for epoch in range(EPOCH):
             d_y = Variable(y_dev)
             test_output = cnn(d_x)
             pred_y = torch.max(test_output, 1)[1].data.squeeze()
-            
+
             accuracy = sum(pred_y == y_dev) / float(y_dev.size(0))
             f_score = f1_score(y_dev.numpy(), pred_y.numpy(), average="macro")
             print('Epoch: ', epoch, 'step: ', step, '| train loss: %.4f' % loss.data[0], '| dev accuracy: %.2f' % accuracy, '| f score: %.2f' % f_score)

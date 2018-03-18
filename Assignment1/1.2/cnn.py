@@ -72,7 +72,7 @@ y_train = []
 with open("../dataset/audio_train.json", "r") as f:
     for line in tqdm(f):
         temp = json.loads(line)
-        y_train.append(int(temp["overall"]-1))
+        y_train.append(int(temp["overall"] - 1))
 
 y_train = torch.from_numpy(np.array(y_train))
 
@@ -81,7 +81,7 @@ print("Loading Doc2vec of dev data")
 x_dev, y_dev = pickle.load(open("dev_data.doc2vec", "rb"))
 x_dev = torch.from_numpy(np.array(x_dev))
 x_dev = x_dev.view(x_dev.size(0), 1, x_dev.size(1))
-y_dev = [ int(y) - 1 for y in y_dev ]
+y_dev = [int(y) - 1 for y in y_dev]
 y_dev = torch.from_numpy(np.array(y_dev))
 
 # print("\nReadin dev_data\n")
@@ -110,7 +110,7 @@ dataset = torch.utils.data.TensorDataset(x_train, y_train)
 train_loader = Data.DataLoader(dataset=dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 for epoch in range(EPOCH):
-    print("EPOCH: %d" %(epoch))
+    print("EPOCH: %d" % (epoch))
     for step, (x, y) in enumerate(train_loader):
         b_x = Variable(x)
         b_x = b_x.view(b_x.size(0), 1, b_x.size(1))
@@ -118,17 +118,17 @@ for epoch in range(EPOCH):
         # b_y = b_y.view(b_y.size(0))
 
         # print("Output by CNN")
-        output = cnn(b_x) # output of the cnn
+        output = cnn(b_x)  # output of the cnn
         # print(output.shape)
         # print("Calculating loss")
-        loss = loss_func(output, b_y) # loss
+        loss = loss_func(output, b_y)  # loss
         # print("Claering old gradients")
-        optimizer.zero_grad() # clearing gradients
+        optimizer.zero_grad()  # clearing gradients
         # print("Backpropogating")
-        loss.backward() # backpropogation
+        loss.backward()  # backpropogation
         # print("applygradients")
-        optimizer.step() # applygradients
-    
+        optimizer.step()  # applygradients
+
         if step % 80 == 0:
             test_output = cnn(x_dev)
             pred_y = torch.max(test_output, 1)[1].data.squeeze()
