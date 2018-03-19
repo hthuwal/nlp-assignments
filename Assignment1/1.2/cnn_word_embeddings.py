@@ -17,10 +17,22 @@ en_stop = set(stopwords.words('english'))
 
 # hyperparameters
 EPOCH = 2
-BATCH_SIZE = 100
+BATCH_SIZE = 1000
 LR = 0.001
 DOWNLOAD_MNIST = False
 
+retrain = False
+if len(sys.argv) == 2 and sys.argv[1] == "retrain":
+    retrain = True
+
+
+def calculate_acc(y1, y2):
+    count = 0
+    for a, b in zip(y1, y2):
+        if a == b:
+            count += 1
+
+    return count * 100 / len(y1)
 
 class CNN(nn.Module):
     def __init__(self,):
@@ -73,36 +85,38 @@ class CNN(nn.Module):
 print("Lodaing Vocab")
 word2idx = pickle.load(open("word2idx", "rb"))
 
-print("\nReading Training Data\n")
-data = []
-with open("../dataset/audio_train.json", "r") as f:
-    for line in tqdm(f):
-        data.append(json.loads(line))
-
-print("\nExtracting x's and y's\n")
-corpus = [(each["summary"] + " ") * 4 + each["reviewText"] for each in data]
-y_train = np.array([int(each["overall"] - 1) for each in data])
-
-del data
-print("\nRemoving stopwords\n")
-x_train = []
-for each in tqdm(corpus):
-    temp = each.lower().split()
-    x_train.append([word2idx[i] for i in temp if i not in en_stop])
-del corpus
-
-print("\nCoverting to sets\n")
-for i in tqdm(range(len(x_train))):
-    x_train[i] = list(set(x_train[i]))
-
 max_length = 1500
 
-for i in tqdm(range(len(x_train))):
-    if len(x_train[i]) < max_length:
-        x_train[i] = x_train[i] + [15001 for j in range(max_length - len(x_train[i]))]
+if retrain:
+    print("\nReading Training Data\n")
+    data = []
+    with open("../dataset/audio_train.json", "r") as f:
+        for line in tqdm(f):
+            data.append(json.loads(line))
 
-x_train = torch.from_numpy(np.array(x_train))
-y_train = torch.from_numpy(y_train)
+    print("\nExtracting x's and y's\n")
+    corpus = [(each["summary"] + " ") * 4 + each["reviewText"] for each in data]
+    y_train = np.array([int(each["overall"] - 1) for each in data])
+
+    del data
+    print("\nRemoving stopwords\n")
+    x_train = []
+    for each in tqdm(corpus):
+        temp = each.lower().split()
+        x_train.append([word2idx[i] for i in temp if i not in en_stop])
+    del corpus
+
+    print("\nCoverting to sets\n")
+    for i in tqdm(range(len(x_train))):
+        x_train[i] = list(set(x_train[i]))
+
+
+    for i in tqdm(range(len(x_train))):
+        if len(x_train[i]) < max_length:
+            x_train[i] = x_train[i] + [15001 for j in range(max_length - len(x_train[i]))]
+
+    x_train = torch.from_numpy(np.array(x_train))
+    y_train = torch.from_numpy(y_train)
 
 
 print("\nReading Dev Data\n")
@@ -113,7 +127,7 @@ with open("../dataset/audio_dev.json", "r") as f:
 
 print("\nExtracting x's and y's\n")
 corpus = [(each["summary"] + " ") * 4 + each["reviewText"] for each in data]
-y_dev = np.array([int(each["overall"] - 1) for each in data])
+y_dev = [int(each["overall"] - 1) for each in data]
 
 del data
 print("\nRemoving stopwords\n")
@@ -130,58 +144,76 @@ for i in range(len(x_dev)):
     if len(x_dev[i]) < max_length:
         x_dev[i] = x_dev[i] + [15001 for j in range(max_length - len(x_dev[i]))]
 
-data = random.sample(list(zip(x_dev, y_dev)), 1000)
-x_dev, y_dev = zip(*data)
-x_dev = torch.from_numpy(np.array(x_dev))
-y_dev = torch.from_numpy(np.array(y_dev))
+
+if retrain:
+    data = random.sample(list(zip(x_dev, y_dev)), 1000)
+    x_dev, y_dev = zip(*data)
+    x_dev = torch.from_numpy(np.array(x_dev))
+    y_dev = torch.from_numpy(np.array(y_dev))
 
 
 if os.path.exists("models/cnn_we"):
     print("Loading Model")
-    cnn, optimizer, loss_func = torch.load("models/cnn")
+    cnn, optimizer, loss_func = torch.load("models/cnn_we")
 else:
     cnn = CNN()
 
     optimizer = torch.optim.Adam(cnn.parameters(), lr=LR)
     loss_func = nn.CrossEntropyLoss()
 
-dataset = torch.utils.data.TensorDataset(x_train, y_train)
-train_loader = Data.DataLoader(dataset=dataset, batch_size=BATCH_SIZE, shuffle=True)
+if retrain:
+    dataset = torch.utils.data.TensorDataset(x_train, y_train)
+    train_loader = Data.DataLoader(dataset=dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-dev_dataset = torch.utils.data.TensorDataset(x_dev, y_dev)
-dev_loader = Data.DataLoader(dataset=dev_dataset, batch_size=BATCH_SIZE, shuffle=True)
+if retrain:
+    for epoch in range(EPOCH):
+        print("EPOCH: %d" % (epoch))
+        for step, (x, y) in enumerate(train_loader):
+            b_x = Variable(x)
+            b_x = b_x.view(b_x.size(0), b_x.size(1))
+            b_y = Variable(y)
+            # b_y = b_y.view(b_y.size(0))
 
-for epoch in range(EPOCH):
-    print("EPOCH: %d" % (epoch))
-    for step, (x, y) in enumerate(train_loader):
-        b_x = Variable(x)
-        b_x = b_x.view(b_x.size(0), b_x.size(1))
-        b_y = Variable(y)
-        # b_y = b_y.view(b_y.size(0))
+            # print("Output by CNN")
+            output = cnn(b_x)  # output of the cnn
+            # print(output.shape)
+            # print("Calculating loss")
+            loss = loss_func(output, b_y)  # loss
+            # print("Claering old gradients")
+            optimizer.zero_grad()  # clearing gradients
+            # print("Backpropogating")
+            loss.backward()  # backpropogation
+            # print("applygradients")
+            optimizer.step()  # applygradients
 
-        # print("Output by CNN")
-        output = cnn(b_x)  # output of the cnn
-        # print(output.shape)
-        # print("Calculating loss")
-        loss = loss_func(output, b_y)  # loss
-        # print("Claering old gradients")
-        optimizer.zero_grad()  # clearing gradients
-        # print("Backpropogating")
-        loss.backward()  # backpropogation
-        # print("applygradients")
-        optimizer.step()  # applygradients
+            if step % 80 == 0:
+                cnn.eval()
+                d_x = Variable(x_dev)
+                d_x = d_x.view(d_x.size(0), d_x.size(1))
+                d_y = Variable(y_dev)
+                test_output = cnn(d_x)
+                pred_y = torch.max(test_output, 1)[1].data.squeeze()
 
-        if step % 80 == 0:
-            cnn.eval()
-            d_x = Variable(x_dev)
-            d_x = d_x.view(d_x.size(0), d_x.size(1))
-            d_y = Variable(y_dev)
-            test_output = cnn(d_x)
-            pred_y = torch.max(test_output, 1)[1].data.squeeze()
+                accuracy = sum(pred_y == y_dev) / float(y_dev.size(0))
+                f_score = f1_score(y_dev.numpy(), pred_y.numpy(), average="macro")
+                print('Epoch: ', epoch, 'step: ', step, '| train loss: %.4f' % loss.data[0], '| dev accuracy: %.2f' % accuracy, '| f score: %.2f' % f_score)
 
-            accuracy = sum(pred_y == y_dev) / float(y_dev.size(0))
-            f_score = f1_score(y_dev.numpy(), pred_y.numpy(), average="macro")
-            print('Epoch: ', epoch, 'step: ', step, '| train loss: %.4f' % loss.data[0], '| dev accuracy: %.2f' % accuracy, '| f score: %.2f' % f_score)
+            cnn.train()
+        torch.save((cnn, optimizer, loss_func), "models/cnn_we")
 
-        cnn.train()
-    torch.save((cnn, optimizer, loss_func), "models/cnn_we")
+if not retrain:
+    print("Predicting")
+    cnn.eval()
+    y_pred = []
+    for x, y in tqdm(zip(x_dev, y_dev)):
+        d_x = Variable(torch.from_numpy(np.array(x)))
+        d_x = d_x.view(1, d_x.size(0))
+        d_y = Variable(torch.from_numpy(np.array(y)))
+        test_output = cnn(d_x)
+        pred_y = torch.max(test_output, 1)[1].data.squeeze()
+        y_pred.append(pred_y.numpy()[0])
+    print(y_pred[1:10])
+    print(y_dev[1:10])
+    accuracy = calculate_acc(y_dev, y_pred)
+    f_score = f1_score(y_dev, y_pred, average="macro")
+    print('dev accuracy: %.2f' % accuracy, '| f score: %.2f' % f_score)
