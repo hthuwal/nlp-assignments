@@ -25,3 +25,9 @@
 /.gitignore
 
 /Assignment1/1.1/models/
+
+/Assignment1/1.2/models/
+
+/Assignment1/1.2/dev_data.doc2vec
+
+/Assignment1/1.2/word2idx
