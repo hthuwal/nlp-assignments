@@ -1,20 +1,20 @@
 import json
+import numpy as np
 import os
 import pickle
+import random
 import sys
 import time
-from tqdm import tqdm
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 import torch.utils.data as Data
-import torchvision
-import numpy as np
-from sklearn import metrics
-from nltk.corpus import stopwords
 import torch.nn.functional as F
+
 from google.colab import files
-import random
+from nltk.corpus import stopwords
+from torch.autograd import Variable
+from tqdm import tqdm
+from sklearn import metrics
 from datetime import timedelta
 en_stop = set(stopwords.words('english'))
 use_cuda = torch.cuda.is_available()
@@ -22,7 +22,7 @@ BATCH_SIZE = 50
 EPOCHS = 10
 
 print("Lodaing Vocab")
-word2idx = pickle.load(open("word2idx_all", "rb"))
+word2idx = pickle.load(open("word2idx", "rb"))
 V = len(word2idx)
 
 max_length = 300
@@ -38,7 +38,7 @@ with open("dataset/audio_train.json", "r") as f:
 print("\nExtracting x's and y's\n")
 corpus = [(each["summary"] + " ") * 4 + each["reviewText"] for each in data]
 y_train = [int(each["overall"] - 1) for each in data]
-y_train = [0 if i == 0 or i == 1 else 2 if i == 3 or i == 4 else 1 for i in y_train]
+# y_train = [0 if i == 0 or i == 1 else 2 if i == 3 or i == 4 else 1 for i in y_train]
 
 del data
 print("\nRemoving stopwords\n")
@@ -55,7 +55,7 @@ for i in tqdm(range(len(x_train))):
 
 for i in tqdm(range(len(x_train))):
     if len(x_train[i]) < max_length:
-        x_train[i] = x_train[i] + [V+1 for j in range(max_length - len(x_train[i]))]
+        x_train[i] = x_train[i] + [V + 1 for j in range(max_length - len(x_train[i]))]
     else:
         x_train[i] = x_train[i][0:max_length]
 
@@ -75,7 +75,7 @@ with open("dataset/audio_dev.json", "r") as f:
 print("\nExtracting x's and y's\n")
 corpus = [(each["summary"] + " ") * 4 + each["reviewText"] for each in data]
 y_dev = [int(each["overall"] - 1) for each in data]
-y_dev = [0 if i == 0 or i == 1 else 2 if i == 3 or i == 4 else 1 for i in y_dev]
+# y_dev = [0 if i == 0 or i == 1 else 2 if i == 3 or i == 4 else 1 for i in y_dev]
 
 del data
 print("\nRemoving stopwords\n")
@@ -91,7 +91,7 @@ for i in tqdm(range(len(x_dev))):
 
 for i in tqdm(range(len(x_dev))):
     if len(x_dev[i]) < max_length:
-        x_dev[i] = x_dev[i] + [V+1 for j in range(max_length - len(x_dev[i]))]
+        x_dev[i] = x_dev[i] + [V + 1 for j in range(max_length - len(x_dev[i]))]
     else:
         x_dev[i] = x_dev[i][0:max_length]
 
@@ -109,6 +109,7 @@ if use_cuda:
     sample_x_dev = sample_x_dev.cuda()
     sample_y_dev = sample_y_dev.cuda()
 
+
 class CNN(nn.Module):
     """
     CNN text classification model, based on the paper.
@@ -116,7 +117,7 @@ class CNN(nn.Module):
 
     def __init__(self):
         super(CNN, self).__init__()
-        self.embedding = nn.Embedding(V+2, embed_size)  # embedding layer
+        self.embedding = nn.Embedding(V + 2, embed_size)  # embedding layer
 
         # three different convolutional layers
         Ks = [2, 3, 4, 5]
@@ -139,11 +140,13 @@ class CNN(nn.Module):
 
         return x
 
+
 dataset = torch.utils.data.TensorDataset(x_dev, y_dev)
 dev_loader = Data.DataLoader(dataset=dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 dataset = torch.utils.data.TensorDataset(sample_x_dev, sample_y_dev)
 sample_dev_loader = Data.DataLoader(dataset=dataset, batch_size=BATCH_SIZE, shuffle=True)
+
 
 def evaluate(data_loader, model, loss, data_len, verbose=False):
     """
@@ -157,9 +160,9 @@ def evaluate(data_loader, model, loss, data_len, verbose=False):
     for data, label in data_loader:
         count += 1
         if verbose:
-           sys.stdout.write("\r\x1b[K %d/%d" % (count, len(data_loader)))
-           print()
-           sys.stdout.flush()
+            sys.stdout.write("\r\x1b[K %d/%d" % (count, len(data_loader)))
+            print()
+            sys.stdout.flush()
         data, label = Variable(data, volatile=True), Variable(label, volatile=True)
         if use_cuda:
             data, label = data.cuda(), label.cuda()
@@ -176,6 +179,7 @@ def evaluate(data_loader, model, loss, data_len, verbose=False):
     fscore = metrics.f1_score(y_true, y_pred, average="macro")
     return acc / data_len, total_loss / data_len, fscore
 
+
 def get_time_dif(start_time):
     """
     Return the time used since start_time.
@@ -184,13 +188,14 @@ def get_time_dif(start_time):
     time_dif = end_time - start_time
     return timedelta(seconds=int(round(time_dif)))
 
+
 def test(model, test_loader):
     """
     Test the model on test dataset.
     """
     print("Testing...")
     start_time = time.time()
-    
+
     # restore the best parameters
     model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
 
@@ -217,6 +222,7 @@ def test(model, test_loader):
     print(cm)
 
     print("Time usage:", get_time_dif(start_time))
+
 
 def train():
 
@@ -265,16 +271,15 @@ def train():
         # evaluate on both training and test dataset
         # train_acc, train_loss = evaluate(train_loader, model, criterion, len(y_train))
         test_acc, test_loss, fscore = evaluate(dev_loader, model, criterion, len(y_dev), verbose=True)
-        
 
         if fscore > best_fscore:
             # store the best result
             best_fscore = fscore
             improved_str = '*'
-            filename = ("hc%d.model" %(epoch+1))
+            filename = ("hc%d.model" % (epoch + 1))
             torch.save(model.state_dict(), filename)
             files.download(filename)
-            
+
         else:
             improved_str = ''
 
@@ -283,5 +288,6 @@ def train():
               + "Test_loss: {1:>6.2}, Test_acc {2:>6.2%}, Fscore {3:6.2%} Time: {4} {5}"
         print(msg.format(epoch + 1, test_loss, test_acc, fscore, time_dif, improved_str))
     test(model, dev_loader)
+
 
 train()
