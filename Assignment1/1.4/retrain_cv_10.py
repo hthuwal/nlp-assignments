@@ -188,3 +188,34 @@ def train(model, train_data, num_epochs):
     return model
 
 
+def doCrossValidation(x, y, model_file, fold=10):
+
+    acc = []
+    fscores = []
+    iter = 1
+    for test_data, train_data in cv_get_data(x, y, fold):
+        print("\nIter %d\n" % iter)
+        iter += 1
+        model = CNN()
+        if os.path.exists(model_file):
+            print("Loading Model")
+            model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
+
+        if use_cuda:
+            model.cuda()
+
+        model = train(model, train_data, 2)
+        curr_acc, curr_fscore = test(model, test_data)
+        acc.append(curr_acc)
+        fscores.append(curr_fscore)
+        print("Saving model: %s" % model_file)
+        torch.save(model.state_dict(), model_file)
+
+    avg_acc = np.average(acc)
+    avg_fscores = np.average(fscores)
+    msg = "%d fold cross Validatioin\n Average Accuracy: %g\n Average Fscore: %g\n"
+    print(msg % (fold, avg_acc, avg_fscores))
+
+
+x, y = load_data(data_file)
+doCrossValidation(x, y, model_file)
