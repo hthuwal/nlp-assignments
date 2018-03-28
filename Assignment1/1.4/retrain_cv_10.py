@@ -103,3 +103,48 @@ def cv_get_data(x, y, fold=10):
         yield (test, train)
 
 
+
+def train(model, train_data, num_epochs):
+
+
+
+
+
+
+
+
+def train(model, train_data, num_epochs):
+
+    x, y = zip(*train_data)
+    x = torch.from_numpy(np.array(x))
+    y = torch.from_numpy(np.array(y))
+
+    # optimizer and loss function
+    criterion = nn.CrossEntropyLoss(size_average=False)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+
+    # set the mode to train
+    print("Training")
+    dataset = torch.utils.data.TensorDataset(x, y)
+    train_loader = Data.DataLoader(dataset=dataset, batch_size=BATCH_SIZE, shuffle=True)
+
+    for epoch in range(num_epochs):
+        print("EPOCH: %d" % epoch)
+        # load the training data in batch
+        model.train()
+        for x_batch, y_batch in tqdm(train_loader):
+            inputs, targets = Variable(x_batch), Variable(y_batch)
+            if use_cuda:
+                inputs, targets = inputs.cuda(), targets.cuda()
+
+            optimizer.zero_grad()
+            outputs = model(inputs)  # forward computation
+            loss = criterion(outputs, targets)
+
+            # backward propagation and update parameters
+            loss.backward()
+            optimizer.step()
+
+    return model
+
+
