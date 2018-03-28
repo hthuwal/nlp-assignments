@@ -28,7 +28,38 @@ max_length = 300
 embed_size = 128
 model_file = "hc_4.model"
 
-train_file = "dataset/data/labelled.json"
+train_file = "../dataset/data/labelled.json"
+
+
+class CNN(nn.Module):
+    """
+    CNN text classification model, based on the paper.
+    """
+
+    def __init__(self):
+        super(CNN, self).__init__()
+        self.embedding = nn.Embedding(V + 2, embed_size)  # embedding layer
+
+        # three different convolutional layers
+        Ks = [3, 4, 5]
+        num_filters = 100
+        num_classes = 3
+        self.convs = nn.ModuleList([nn.Conv1d(embed_size, num_filters, k) for k in Ks])
+        self.dropout = nn.Dropout(0.5)  # a dropout layer
+        self.fc1 = nn.Linear(3 * num_filters, num_classes)  # a dense layer for classification
+
+    @staticmethod
+    def conv_and_max_pool(x, conv):
+        """Convolution and global max pooling layer"""
+        return F.relu(conv(x).permute(0, 2, 1).max(1)[0])
+
+    def forward(self, inputs):
+        # Conv1d takes in (batch, channels, seq_len), but raw embedded is (batch, seq_len, channels)
+        embedded = self.embedding(inputs).permute(0, 2, 1)
+        x = [self.conv_and_max_pool(embedded, k) for k in self.convs]  # convolution and global max pooling
+        x = self.fc1(self.dropout(torch.cat(x, 1)))  # concatenation and dropout
+
+        return x
 
 
 def load_data(file):
