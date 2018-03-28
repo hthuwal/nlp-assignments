@@ -103,14 +103,54 @@ def cv_get_data(x, y, fold=10):
         yield (test, train)
 
 
+def get_time_dif(start_time):
+    """
+    Return the time used since start_time.
+    """
+    end_time = time.time()
+    time_dif = end_time - start_time
+    return timedelta(seconds=int(round(time_dif)))
 
-def train(model, train_data, num_epochs):
 
+def test(model, test_data):
+    """
+    Test the model on test dataset.
+    """
+    model.eval()
+    print("Testing...")
+    start_time = time.time()
 
+    x, y = zip(*test_data)
+    x = torch.from_numpy(np.array(x))
+    y = torch.from_numpy(np.array(y))
 
+    dataset = torch.utils.data.TensorDataset(x, y)
+    test_loader = Data.DataLoader(dataset=dataset, batch_size=BATCH_SIZE, shuffle=True)
 
+    y_true, y_pred = [], []
+    for data, label in tqdm(test_loader):
+        data, label = Variable(data, volatile=True), Variable(label, volatile=True)
+        if use_cuda:
+            data, label = data.cuda(), label.cuda()
 
+        output = model(data)
+        pred = torch.max(output.data, dim=1)[1].cpu().numpy().tolist()
+        y_pred.extend(pred)
+        y_true.extend(label.data)
 
+    test_acc = metrics.accuracy_score(y_true, y_pred)
+    test_f1 = metrics.f1_score(y_true, y_pred, average='macro')
+    print("Test accuracy: {0:>7.2%}, F1-Score: {1:>7.2%}".format(test_acc, test_f1))
+
+    print("Precision, Recall and F1-Score...")
+    print(metrics.classification_report(y_true, y_pred, target_names=['0', '1', '2']))
+
+    print('Confusion Matrix...')
+    cm = metrics.confusion_matrix(y_true, y_pred)
+    print(cm)
+
+    print("Time usage:", get_time_dif(start_time))
+    return test_acc, test_f1
 
 
 def train(model, train_data, num_epochs):
