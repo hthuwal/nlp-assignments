@@ -117,7 +117,7 @@ def test(model, test_data):
     Test the model on test dataset.
     """
     model.eval()
-    print("Testing...")
+    print("\nTesting...")
     start_time = time.time()
 
     x, y = zip(*test_data)
@@ -140,7 +140,7 @@ def test(model, test_data):
 
     test_acc = metrics.accuracy_score(y_true, y_pred)
     test_f1 = metrics.f1_score(y_true, y_pred, average='macro')
-    print("Test accuracy: {0:>7.2%}, F1-Score: {1:>7.2%}".format(test_acc, test_f1))
+    print("\n\nTest accuracy: {0:>7.2%}, F1-Score: {1:>7.2%}".format(test_acc, test_f1))
 
     print("Precision, Recall and F1-Score...")
     print(metrics.classification_report(y_true, y_pred, target_names=['0', '1', '2']))
@@ -164,12 +164,12 @@ def train(model, train_data, num_epochs):
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     # set the mode to train
-    print("Training")
+    print("\nTraining")
     dataset = torch.utils.data.TensorDataset(x, y)
     train_loader = Data.DataLoader(dataset=dataset, batch_size=BATCH_SIZE, shuffle=True)
 
     for epoch in range(num_epochs):
-        print("EPOCH: %d" % epoch)
+        print("\nEPOCH: %d" % epoch)
         # load the training data in batch
         model.train()
         for x_batch, y_batch in tqdm(train_loader):
@@ -217,5 +217,18 @@ def doCrossValidation(x, y, model_file, fold=10):
     print(msg % (fold, avg_acc, avg_fscores))
 
 
+cv = True
 x, y = load_data(data_file)
-doCrossValidation(x, y, model_file)
+if not cv:
+    model = CNN()
+    if os.path.exists(model_file):
+        print("Loading Model")
+        model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
+
+    if use_cuda:
+        model.cuda()
+
+    test(model, zip(x, y))
+
+else:
+    doCrossValidation(x, y, model_file)
