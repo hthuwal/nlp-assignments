@@ -2,8 +2,6 @@ import json
 import numpy as np
 import os
 import pickle
-import random
-import sys
 import time
 import torch
 import torch.nn as nn
@@ -17,7 +15,7 @@ from datetime import timedelta
 from random import shuffle
 en_stop = set(stopwords.words('english'))
 use_cuda = torch.cuda.is_available()
-BATCH_SIZE = 50
+BATCH_SIZE = 1
 EPOCHS = 10
 
 print("Lodaing Vocab")
@@ -28,7 +26,7 @@ max_length = 300
 embed_size = 128
 model_file = "hc_4.model"
 
-train_file = "../dataset/data/labelled.json"
+data_file = "../dataset/data/labelled.json"
 
 
 class CNN(nn.Module):
@@ -95,5 +93,13 @@ def load_data(file):
     return x, y
 
 
-def crossvalidation(x, y, fold=10):
-    z = zip(x, y)
+def cv_get_data(x, y, fold=10):
+    z = list(zip(x, y))
+    shuffle(z)
+    fold_size = int(len(z) / fold)
+    for i in range(0, len(z), fold_size):
+        test = z[i:i + (fold_size)]
+        train = z[0:i] + z[i + (fold_size):]
+        yield (test, train)
+
+
