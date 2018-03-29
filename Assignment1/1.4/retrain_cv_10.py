@@ -13,6 +13,7 @@ from tqdm import tqdm
 from sklearn import metrics
 from datetime import timedelta
 from random import shuffle
+from sklearn.model_selection import StratifiedKFold
 en_stop = set(stopwords.words('english'))
 use_cuda = torch.cuda.is_available()
 BATCH_SIZE = 1
@@ -188,12 +189,17 @@ def train(model, train_data, num_epochs):
     return model
 
 
-def doCrossValidation(x, y, model_file, fold=10):
-
+def doCrossValidation(x, y, model_file, fold=10, num_epochs=2):
     acc = []
     fscores = []
     iter = 1
-    for test_data, train_data in cv_get_data(x, y, fold):
+    x = np.array(x)
+    y = np.array(y)
+    skf = StratifiedKFold(n_splits=fold)
+
+    for train_index, test_index in skf.split(x, y):
+        train_data = list(zip(x[train_index], y[train_index]))
+        test_data = list(zip(x[test_index], y[test_index]))
         print("\nIter %d\n" % iter)
         iter += 1
         model = CNN()
@@ -204,12 +210,10 @@ def doCrossValidation(x, y, model_file, fold=10):
         if use_cuda:
             model.cuda()
 
-        model = train(model, train_data, 2)
+        model = train(model, train_data, num_epochs)
         curr_acc, curr_fscore = test(model, test_data)
         acc.append(curr_acc)
         fscores.append(curr_fscore)
-        print("Saving model: %s" % model_file)
-        torch.save(model.state_dict(), model_file)
 
     avg_acc = np.average(acc)
     avg_fscores = np.average(fscores)
@@ -231,4 +235,4 @@ if not cv:
     test(model, zip(x, y))
 
 else:
-    doCrossValidation(x, y, model_file)
+    doCrossValidation(x, y, model_file, num_epochs=10)
