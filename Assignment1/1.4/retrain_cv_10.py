@@ -225,8 +225,6 @@ def doCrossValidation(x, y, model_file, fold=10, num_epochs=2):
         curr_acc, curr_fscore = test(model, test_data)
         acc.append(curr_acc)
         fscores.append(curr_fscore)
-        print("Saving model: %s" % model_file)
-        torch.save(model.state_dict(), model_file)
 
     avg_acc = np.average(acc)
     avg_fscores = np.average(fscores)
