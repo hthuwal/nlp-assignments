@@ -56,9 +56,26 @@ class CNN(nn.Module):
         # Conv1d takes in (batch, channels, seq_len), but raw embedded is (batch, seq_len, channels)
         embedded = self.embedding(inputs).permute(0, 2, 1)
         x = [self.conv_and_max_pool(embedded, k) for k in self.convs]  # convolution and global max pooling
-        x = self.fc1(self.dropout(torch.cat(x, 1)))  # concatenation and dropout
-
         return x
+
+
+class daCNN(nn.Module):
+    def __init__(self):
+        super(daCNN, self).__init__()
+        self.old_model = CNN()
+        num_filters = 100
+        num_classes = 3
+        self.fc = nn.Linear(3 * num_filters, 30)  # a dense layer for classification
+        self.fc2 = nn.Linear(30, 3)
+
+    def forward(self, inputs):
+        x = self.old_model.forward(inputs)
+        x = self.fc(torch.cat(x, 1))
+        x = self.fc2(x)
+        return x
+
+    def load(self, model_file):
+        self.old_model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
 
 
 def load_data(file):
@@ -202,10 +219,10 @@ def doCrossValidation(x, y, model_file, fold=10, num_epochs=2):
         test_data = list(zip(x[test_index], y[test_index]))
         print("\nIter %d\n" % iter)
         iter += 1
-        model = CNN()
+        model = daCNN()
         if os.path.exists(model_file):
             print("Loading Model")
-            model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
+            model.load(model_file)
 
         if use_cuda:
             model.cuda()
@@ -224,10 +241,10 @@ def doCrossValidation(x, y, model_file, fold=10, num_epochs=2):
 cv = True
 x, y = load_data(data_file)
 if not cv:
-    model = CNN()
+    model = daCNN()
     if os.path.exists(model_file):
         print("Loading Model")
-        model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
+        model.load(model_file)
 
     if use_cuda:
         model.cuda()
