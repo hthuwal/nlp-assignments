@@ -87,7 +87,7 @@ dev_data, dev_labels = train_data[3001:], train_labels[3001:]
 train_data, train_labels = train_data[:3001], train_labels[:3001]
 
 
-def train(epohs=1000, file="bilstm.model"):
+def train(epochs=1000, file="bilstm.model"):
     model = BiLSTM(vocab_size, 100, 100, len(t2i))
     if os.path.exists(file):
         print("Loading Model")
@@ -102,7 +102,7 @@ def train(epohs=1000, file="bilstm.model"):
     print("\nTraining...")
     model.train()
     best_macrof1 = 0
-    for epoch in range(300):
+    for epoch in range(epochs):
         print("\nEpoch %d" % (epoch))
         i = 1
         for sentence, labels in zip(train_data, train_labels):
