@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from sklearn import metrics
-from tqdm import tqdm
 
 use_cuda = torch.cuda.is_available()
 
