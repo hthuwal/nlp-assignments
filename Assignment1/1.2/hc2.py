@@ -75,7 +75,7 @@ with open("dataset/audio_dev.json", "r") as f:
 print("\nExtracting x's and y's\n")
 corpus = [(each["summary"] + " ") * 4 + each["reviewText"] for each in data]
 y_dev = [int(each["overall"] - 1) for each in data]
-# y_dev = [0 if i == 0 or i == 1 else 2 if i == 3 or i == 4 else 1 for i in y_dev]
+y_dev = [0 if i == 0 or i == 1 else 2 if i == 3 or i == 4 else 1 for i in y_dev]
 
 del data
 print("\nRemoving stopwords\n")

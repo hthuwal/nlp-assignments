@@ -1,29 +1,29 @@
 import json
 import pickle
 from nltk.tokenize import RegexpTokenizer
-from nltk.stem.porter import PorterStemmer
 from gensim import models, corpora
 from tqdm import tqdm
-from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import TfidfVectorizer
-from multiprocessing  import Pool
+from multiprocessing import Pool
 import logging
 logging.basicConfig(format='%(asctime)s: %(levelname)s : %(message)s', level=logging.INFO)
 
-#initializing stemmer
+# initializing stemmer
 tokenizer = RegexpTokenizer(r'\w+')
 
 y_train = pickle.load(open("y_tri_cat", "rb"))
 
 dictionary = None
 
+
 def stem_stop(text):
     tokens = tokenizer.tokenize(text)
     return tokens
 
+
 def doc2bowmul(text):
     global dictionary
     return dictionary.doc2bow(text)
+
 
 # if not os.path.exists("stemmed_train.set"):
 print("\nReading Data\n")
@@ -32,7 +32,7 @@ y = []
 with open("dataset/audio_train.json", "r") as f:
     for line in tqdm(f):
         temp = json.loads(line)
-        data.append((temp["summary"]+" ")*3 + temp["reviewText"])
+        data.append((temp["summary"] + " ") * 3 + temp["reviewText"])
         y.append(temp["overall"])
 
 
@@ -55,6 +55,5 @@ with open("corpora", "wb") as f:
 print("Training Ldamodel")
 ldamodel = models.LdaMulticore(corpora, num_topics=100, id2word=dictionary, passes=1, workers=8)
 
-with open("ldamodel" ,"wb") as f:
+with open("ldamodel", "wb") as f:
     pickle.dump(ldamodel, f)
-
