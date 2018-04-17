@@ -27,7 +27,8 @@ max_length = 300
 embed_size = 128
 model_file = "hc_4.model"
 
-data_file = "../dataset/data/labelled.json"
+labelled_file = "../dataset/data/labelled.json"
+unlabelled_file = "../dataset/data/unlabelled.json"
 
 
 class CNN(nn.Module):
@@ -78,7 +79,7 @@ class daCNN(nn.Module):
         self.old_model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
 
 
-def load_data(file):
+def load_data(file, labelled=True):
     print("\nReading Training Data\n")
     data = []
     with open(file, "r") as f:
@@ -87,7 +88,12 @@ def load_data(file):
 
     print("\nExtracting x's and y's\n")
     corpus = [(each["summary"] + " ") * 4 + each["reviewText"] for each in data]
-    y = [int(each["overall"] - 1) if "overall" in each else -1 for each in data]
+
+    if labelled:
+        y = [int(each["overall"] - 1) if "overall" in each else -1 for each in data]
+    else:
+        y = pickle.load(open("y_ul", "rb"))
+
     y = [0 if i == 0 or i == 1 else 2 if i == 3 or i == 4 else 1 for i in y]
 
     del data
@@ -239,7 +245,11 @@ def doCrossValidation(x, y, model_file, fold=10, num_epochs=2):
 
 
 cv = True
-x, y = load_data(data_file)
+xl, yl = load_data(labelled_file)
+xu, yu = load_data(unlabelled_file, labelled=False)
+x = xl + xu
+y = yl + yu
+
 if not cv:
     model = daCNN()
     if os.path.exists(model_file):
