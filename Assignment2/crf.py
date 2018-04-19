@@ -1,11 +1,12 @@
-import random
+import numpy as np
 import sklearn_crfsuite
 from sklearn.metrics import make_scorer
 from sklearn_crfsuite import metrics
 from sklearn.grid_search import RandomizedSearchCV
+from sklearn.model_selection import cross_validate
 import scipy
 
-random.seed(64)
+# random.seed(64)
 
 
 def read_data(file):
@@ -34,6 +35,7 @@ def w2f(sentence, i):
         'word.lower()': word.lower(),
         'word[-3:]': word[-3:],
         'word[-2:]': word[-2:],
+        'hyphenated': "-" in word,
         'word.isupper()': word.isupper(),
         'word.istitle()': word.istitle(),
         'word.isdigit()': word.isdigit(),
@@ -102,14 +104,15 @@ def gridsearch():
 train_data, train_labels = read_data("train.txt")
 train_data = data2features(train_data)
 
-data = list(zip(train_data, train_labels))
-random.shuffle(data)
-train_data, train_labels = zip(*data)
+# data = list(zip(train_data, train_labels))
+# random.shuffle(data)
+# train_data, train_labels = zip(*data)
 
-dev_data, dev_labels = train_data[3001:], train_labels[3001:]
-train_data, train_labels = train_data[:3001], train_labels[:3001]
+# dev_data, dev_labels = train_data[3001:], train_labels[3001:]
+# train_data, train_labels = train_data[:3001], train_labels[:3001]
 
-# best params: {'c1': 0.18518537861478376, 'c2': 0.00752984879117378}
+
+# best params: {'c1': 0.1194787390209859, 'c2': 0.01628325716741175}
 
 crf = sklearn_crfsuite.CRF(
     algorithm='lbfgs',
@@ -118,13 +121,11 @@ crf = sklearn_crfsuite.CRF(
     max_iterations=200,
     all_possible_transitions=True
 )
-crf.fit(train_data, train_labels)
+labels = ['T', 'D']
 
-labels = list(crf.classes_)
-labels.remove('O')
+f1_scorer = make_scorer(metrics.flat_f1_score, average='macro', labels=labels)
 
-y_pred = crf.predict(dev_data)
-metrics.flat_f1_score(dev_labels, y_pred,
-                      average='macro', labels=labels)
+score = cross_validate(crf, train_data, train_labels, cv=8, verbose=1, n_jobs=-1, return_train_score=True, scoring=f1_scorer)
 
-print(metrics.flat_classification_report(y_pred, dev_labels, labels))
+for key in score:
+    score[key] = np.mean(score[key])
