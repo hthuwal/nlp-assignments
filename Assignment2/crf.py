@@ -120,15 +120,26 @@ def gridsearch():
     return rs.best_params_, rs.best_estimator_, rs.best_score_
 
 
-train_data, train_labels = read_data("train.txt")
-train_data = data2features(train_data)
+def error_analysis():
+    crf.fit(train_data, train_labels)
+    pred = crf.predict(train_data)
 
-# data = list(zip(train_data, train_labels))
-# random.shuffle(data)
-# train_data, train_labels = zip(*data)
+    for i in range(len(pred)):
+        pr = pred[i]
+        tr = train_labels[i]
+        flag = False
+        for j in range(len(pr)):
+            if pr[j] != tr[j]:
+                flag = True
+                break
 
-# dev_data, dev_labels = train_data[3001:], train_labels[3001:]
-# train_data, train_labels = train_data[:3001], train_labels[:3001]
+        if flag:
+            for j in range(len(train_data[i])):
+                print(train_data[i][j]['word.lower()'], end=" ")
+            print("")
+            print(pr)
+            print(tr)
+            input()
 
 
 train_data, train_labels = read_data("train.txt")
@@ -156,3 +167,8 @@ score = cross_validate(crf, train_data, train_labels, cv=10, verbose=2, n_jobs=-
 
 for key in score:
     score[key] = np.mean(score[key])
+
+print("Average Scores\n")
+print(score)
+
+# error_analysis()
