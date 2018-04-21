@@ -9,7 +9,7 @@ from collections import Counter
 import scipy
 import nltk
 
-# random.seed(64)
+random.seed(64)
 
 
 def read_data(file):
@@ -47,8 +47,6 @@ def w2f(sentence, i):
         'prefix3': word[0:3],
         'prefix2': word[0:2],
         'prefix1': word[0:1],
-        'hyphenated': '-' in word,
-        'itis': 'itis' in word,
         'word.isupper()': word.isupper(),
         'word.istitle()': word.istitle(),
         'word.isdigit()': word.isdigit(),
@@ -65,6 +63,10 @@ def w2f(sentence, i):
             'prev_word.lower()': prev_word.lower(),
             'prev_word.istitle()': prev_word.istitle(),
             'prev_word.isupper()': prev_word.isupper(),
+            'prev_word_suffix[4]': prev_word[-4:],
+            'prev_word_suffix[3]': prev_word[-3:],
+            'prev_word_suffix[2]': prev_word[-2:],
+            'prev_word_suffix[1]': prev_word[-1:],
             'prev_tag': prev_tag,
             'prev_tag[:2]': prev_tag[:2],
         })
@@ -78,6 +80,10 @@ def w2f(sentence, i):
         features.update({
             'next_word.lower()': next_word.lower(),
             'next_word.istitle()': next_word.istitle(),
+            'next_word_prefix[4]': next_word[0:4],
+            'next_word_prefix[3]': next_word[0:3],
+            'next_word_prefix[2]': next_word[0:2],
+            'next_word_prefix[1]': next_word[0:1],
             'next_word.isupper()': next_word.isupper(),
             'next_tag': next_tag,
             'next_tag[:2]': next_tag[:2],
