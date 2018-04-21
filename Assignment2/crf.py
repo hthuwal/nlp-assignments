@@ -1,10 +1,13 @@
+import random
 import numpy as np
 import sklearn_crfsuite
 from sklearn.metrics import make_scorer
 from sklearn_crfsuite import metrics
 from sklearn.grid_search import RandomizedSearchCV
 from sklearn.model_selection import cross_validate
+from collections import Counter
 import scipy
+import nltk
 
 # random.seed(64)
 
@@ -112,7 +115,15 @@ train_data = data2features(train_data)
 # train_data, train_labels = train_data[:3001], train_labels[:3001]
 
 
-# best params: {'c1': 0.1194787390209859, 'c2': 0.01628325716741175}
+train_data, train_labels = read_data("train.txt")
+train_data = [nltk.pos_tag(sentence) for sentence in train_data]
+train_data = data2features(train_data)
+
+data = list(zip(train_data, train_labels))
+random.shuffle(data)
+train_data, train_labels = zip(*data)
+
+# best_params, best_estimator, best_score = gridsearch()
 
 crf = sklearn_crfsuite.CRF(
     algorithm='lbfgs',
