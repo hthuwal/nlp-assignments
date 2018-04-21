@@ -32,33 +32,49 @@ def read_data(file):
 
 
 def w2f(sentence, i):
-    word = sentence[i]
+
+    word = sentence[i][0]
+    postag = sentence[i][1]
     features = {
         'bias': 1.0,
         'word.lower()': word.lower(),
-        'word[-3:]': word[-3:],
-        'word[-2:]': word[-2:],
-        'hyphenated': "-" in word,
+        'suffix4': word[-4:],
+        'suffix3': word[-3:],
+        'suffix2': word[-2:],
+        'suffix1': word[-1:],
+        'prefix4': word[0:4],
+        'prefix3': word[0:3],
+        'prefix2': word[0:2],
+        'prefix1': word[0:1],
         'word.isupper()': word.isupper(),
         'word.istitle()': word.istitle(),
         'word.isdigit()': word.isdigit(),
+        'postag': postag,
+        'postag[:2]': postag[:2],
+
     }
     if i > 0:
-        word1 = sentence[i - 1]
+        word1 = sentence[i - 1][0]
+        postag1 = sentence[i - 1][1]
         features.update({
             '-1:word.lower()': word1.lower(),
             '-1:word.istitle()': word1.istitle(),
             '-1:word.isupper()': word1.isupper(),
+            '-1:postag': postag1,
+            '-1:postag[:2]': postag1[:2],
         })
     else:
         features['BOS'] = True
 
     if i < len(sentence) - 1:
-        word1 = sentence[i + 1]
+        word1 = sentence[i + 1][0]
+        postag1 = sentence[i + 1][1]
         features.update({
             '+1:word.lower()': word1.lower(),
             '+1:word.istitle()': word1.istitle(),
             '+1:word.isupper()': word1.isupper(),
+            '+1:postag': postag1,
+            '+1:postag[:2]': postag1[:2],
         })
     else:
         features['EOS'] = True
@@ -127,16 +143,16 @@ train_data, train_labels = zip(*data)
 
 crf = sklearn_crfsuite.CRF(
     algorithm='lbfgs',
-    c1=0.1,
-    c2=0.1,
+    c1=0.2206622958624755,
+    c2=0.05267306819960647,
     max_iterations=200,
-    all_possible_transitions=True
+    all_possible_transitions=True,
 )
 labels = ['T', 'D']
-
 f1_scorer = make_scorer(metrics.flat_f1_score, average='macro', labels=labels)
 
-score = cross_validate(crf, train_data, train_labels, cv=8, verbose=1, n_jobs=-1, return_train_score=True, scoring=f1_scorer)
+print("Performing Cross Validation")
+score = cross_validate(crf, train_data, train_labels, cv=10, verbose=2, n_jobs=-1, return_train_score=True, scoring=f1_scorer)
 
 for key in score:
     score[key] = np.mean(score[key])
