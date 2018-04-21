@@ -35,6 +35,7 @@ def w2f(sentence, i):
 
     word = sentence[i][0]
     postag = sentence[i][1]
+    # features corresponding to this word
     features = {
         'bias': 1.0,
         'word.lower()': word.lower(),
@@ -46,6 +47,8 @@ def w2f(sentence, i):
         'prefix3': word[0:3],
         'prefix2': word[0:2],
         'prefix1': word[0:1],
+        'hyphenated': '-' in word,
+        'itis': 'itis' in word,
         'word.isupper()': word.isupper(),
         'word.istitle()': word.istitle(),
         'word.isdigit()': word.isdigit(),
@@ -53,28 +56,31 @@ def w2f(sentence, i):
         'postag[:2]': postag[:2],
 
     }
+
+    # features based on previous word
     if i > 0:
-        word1 = sentence[i - 1][0]
-        postag1 = sentence[i - 1][1]
+        prev_word = sentence[i - 1][0]
+        prev_tag = sentence[i - 1][1]
         features.update({
-            '-1:word.lower()': word1.lower(),
-            '-1:word.istitle()': word1.istitle(),
-            '-1:word.isupper()': word1.isupper(),
-            '-1:postag': postag1,
-            '-1:postag[:2]': postag1[:2],
+            'prev_word.lower()': prev_word.lower(),
+            'prev_word.istitle()': prev_word.istitle(),
+            'prev_word.isupper()': prev_word.isupper(),
+            'prev_tag': prev_tag,
+            'prev_tag[:2]': prev_tag[:2],
         })
     else:
         features['BOS'] = True
 
+    # features based on next word
     if i < len(sentence) - 1:
-        word1 = sentence[i + 1][0]
-        postag1 = sentence[i + 1][1]
+        next_word = sentence[i + 1][0]
+        next_tag = sentence[i + 1][1]
         features.update({
-            '+1:word.lower()': word1.lower(),
-            '+1:word.istitle()': word1.istitle(),
-            '+1:word.isupper()': word1.isupper(),
-            '+1:postag': postag1,
-            '+1:postag[:2]': postag1[:2],
+            'next_word.lower()': next_word.lower(),
+            'next_word.istitle()': next_word.istitle(),
+            'next_word.isupper()': next_word.isupper(),
+            'next_tag': next_tag,
+            'next_tag[:2]': next_tag[:2],
         })
     else:
         features['EOS'] = True
