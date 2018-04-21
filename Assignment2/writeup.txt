@@ -1,0 +1,15 @@
+None
+https://owncloud.iitd.ac.in/owncloud/index.php/s/bWaeQ9bABYC4QJj/download
+
+Used sklearn-crfsuite to lear a crf model. 
+Code inspired from the tutorial at (https://sklearn-crfsuite.readthedocs.io/en/latest/tutorial.html) as reference.
+
+Performed GridSearach to calculate optimum values of parameters of crf model.
+
+Was able to achieve the following cross validation results
+
+
+Macro_F1 over train: 97.21897496841546
+Macro_F1 over test: 71.17697047787296,
+
+only labels [T, D] are considered while calculating Macro F1 Score
