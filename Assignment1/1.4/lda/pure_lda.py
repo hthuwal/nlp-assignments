@@ -49,7 +49,7 @@ def get_most_similar_documents(query, matrix, k=10):
     return sims.argsort()[:k]  # the top k positional index of the smallest Jensen Shannon distances
 
 
-if not os.path.exists("test/ldamodel"):
+if not os.path.exists("ldamodel"):
     print("\nReading Data\n")
     data = []
     with open("../dataset/audio_train.json", "r") as f:
@@ -67,23 +67,23 @@ if not os.path.exists("test/ldamodel"):
     print("Creating corpora")
     corpora = [dictionary.doc2bow(text) for text in tqdm(tokens)]
 
-    with open("test/dictionary", "wb") as f:
+    with open("dictionary", "wb") as f:
         pickle.dump(dictionary, f)
 
-    with open("test/corpora", "wb") as f:
+    with open("corpora", "wb") as f:
         pickle.dump(corpora, f)
 
     print("Training Ldamodel")
     ldamodel = models.LdaMulticore(corpora, num_topics=15, id2word=dictionary, passes=1, workers=8)
 
-    with open("test/ldamodel", "wb") as f:
+    with open("ldamodel", "wb") as f:
         pickle.dump(ldamodel, f)
 
 else:
     print("\nLoading LDA Model\n")
-    ldamodel = pickle.load(open("test/ldamodel", "rb"))
-    dictionary = pickle.load(open("test/dictionary", "rb"))
-    l_c = pickle.load(open("test/corpora", "rb"))
+    ldamodel = pickle.load(open("ldamodel", "rb"))
+    dictionary = pickle.load(open("dictionary", "rb"))
+    l_c = pickle.load(open("corpora", "rb"))
 
     print("\nReading Unlabelled Data\n")
     data = []
