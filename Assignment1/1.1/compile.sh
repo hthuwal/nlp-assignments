@@ -1,1 +1,1 @@
-wget -O 2017MCS2074.model "https://owncloud.iitd.ac.in/owncloud/index.php/s/LogntcFEmbwjnZ6/download"
+wget -O 2017MCS2074.model "https://owncloud.iitd.ac.in/owncloud/index.php/s/6DjZ8iSL4M4c4NQ/download"
