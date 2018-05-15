@@ -2,12 +2,10 @@ import json
 import os
 import pickle
 import sys
-import time
 import torch
 import torch.nn as nn
 import torch.utils.data as Data
 import torch.nn.functional as F
-import torchvision
 
 
 from torch.autograd import Variable
@@ -18,10 +16,10 @@ en_stop = set(stopwords.words('english'))
 use_cuda = torch.cuda.is_available()
 
 print("Lodaing Vocab")
-word2idx = pickle.load(open("2017MCS2074.vocab", "rb"))  # word2idx
+word2idx = pickle.load(open("2017MCS2074.vocab", "rb"))
 V = len(word2idx)
 
-model_file = "2017MCS2074.cnn"  # hc_15000_3_4_5.model
+model_file = "2017MCS2074.cnn"
 max_length = 300
 BATCH_SIZE = 50
 embed_size = 128
@@ -146,4 +144,3 @@ if use_cuda:
     model.cuda()
 
 test(model, dev_loader)
-odel, dev_loader)
